@@ -46,7 +46,12 @@ Tabuleiro importaTabuleiro(char *nomeArquivo) {
 void exibeTabuleiro(Tabuleiro *t) {
     for (int i = 0; i < t->m; ++i) {
         for (int j = 0; j < t->n; ++j) {
-            printf("%d\t", t->Tab[i][j]);
+            if (j == 0)
+                printf("%c\t", i == 0 ? ' ' : i - 1 + 65);
+            if (i == 0)
+                printf("%c\t", j != t->n ? j + 65 : '\n');
+            else
+                printf("%d\t", t->Tab[i][j]);
         }
         printf("\n");
     }

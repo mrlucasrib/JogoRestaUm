@@ -26,15 +26,16 @@ void inicializaTabuleiro(Tabuleiro *t) {
 
 Tabuleiro importaTabuleiro(char *nomeArquivo) {
     FILE *file = fopen(nomeArquivo, "r");
-    if (file == NULL){
+    if (file == NULL) {
         printf("Arquivo não encontrado");
-        exit(1);}
+        exit(1);
+    }
     int m, n;
-    fscanf(nomeArquivo, "%d %d", &m, &n);
+    fscanf(file, "%d %d", &m, &n);
     Tabuleiro t = geraTabuleiro(m, n);
     for (int i = 0; i < m; ++i) {
         for (int j = 0; j < n; ++j) {
-            fscanf(nomeArquivo, "%d", &t.Tab[i][j]);
+            fscanf(file, "%d", &t.Tab[i][j]);
         }
     }
     fclose(file);
@@ -99,16 +100,18 @@ Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t) {
                     return Inconclusivo;
                 ++pinos;
             }
-            if (pinos == 1)
-                return Venceu;
-            return Perdeu;
         }
     }
+    if (pinos == 1)
+        return Venceu;
+    return Perdeu;
+
+
 }
 
 bool salvaTabuleiro(Tabuleiro *t, char *nomeArquivo) {
     FILE *f = fopen(nomeArquivo, "w");
-    if(f == NULL)
+    if (f == NULL)
         return false;
     fprintf(f, "%d %d", t->n, t->n);
     for (int i = 0; i < t->n; ++i) {
@@ -132,7 +135,7 @@ int main(int argc, char *argv[]) {
         t = geraTabuleiro(m, n);
         inicializaTabuleiro(&t);
     }
-    printf("Um jogo foi %s\n\n", argc < 1 ? "criado" : "importado");
+    printf("Um jogo foi %s\n\n", argc > 1 ? "criado" : "importado");
 
     do {
         Jogada j;
@@ -144,17 +147,15 @@ int main(int argc, char *argv[]) {
         if (!strcmp(token, "c") || !strcmp(token, "b") ||
             !strcmp(token, "e") || !strcmp(token, "d")) {
             j.direcao = (Direcao) token[0];
-            token = strtok(NULL, " ");
-            j.x = atoi(token);
-            token = strtok(NULL, " ");
-            j.y = atoi(token);
+            j.x = token[2] - 65; // 65 == 'A'
+            j.y = token[3] - 65;
             fazJogada(&t, &j);
         } else if (!strcasecmp(token, "ajuda")) {
             token = strtok(NULL, " ");
 //            criaJogada(t);
         } else if (!strcasecmp(token, "salvar")) {
             token = strtok(NULL, " ");
-//            salvaTabuleiro(&t, token);
+            salvaTabuleiro(&t, token);
         } else if (!strcasecmp(token, "sair")) {
             return 0;
         } else {
@@ -165,6 +166,5 @@ int main(int argc, char *argv[]) {
     } while (verificaSeVenceuOuPerdeu(&t) == Inconclusivo);
 
 //    printf("Voce %s o jogo->", verificaSeVenceu(&t) ? "venceu" : "perdeu");
-    fclose(file);
     return 0;
 }

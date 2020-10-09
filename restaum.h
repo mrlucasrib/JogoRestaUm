@@ -36,11 +36,11 @@ bool fazJogada(Tabuleiro *t, Jogada *j);
 
 Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t);
 
-bool salvaTabuleiro(Tabuleiro *t, FILE *f);
+bool salvaTabuleiro(Tabuleiro *t, char *nomeArquivo);
 
 void exibeTabuleiro(Tabuleiro *t);
 
-Tabuleiro importaTabuleiro(FILE *f);
+Tabuleiro importaTabuleiro(char *nomeArquivo);
 
 Tabuleiro geraTabuleiro(int m, int n);
 

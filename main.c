@@ -24,6 +24,25 @@ void inicializaTabuleiro(Tabuleiro *t) {
     }
 }
 
+Tabuleiro importaTabuleiro(char *nomeArquivo) {
+    FILE *file = fopen(nomeArquivo, "r");
+    if (file == NULL) {
+        printf("Arquivo não encontrado");
+        exit(1);
+    }
+    int m, n;
+    fscanf(file, "%d %d", &m, &n);
+    Tabuleiro t = geraTabuleiro(m, n);
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            fscanf(file, "%d", &t.Tab[i][j]);
+        }
+    }
+    fclose(file);
+    return t;
+}
+
+
 void exibeTabuleiro(Tabuleiro *t) {
     for (int i = 0; i < t->m; ++i) {
         for (int j = 0; j < t->n; ++j) {
@@ -81,29 +100,42 @@ Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t) {
                     return Inconclusivo;
                 ++pinos;
             }
-            if(pinos == 1)
-                return Venceu;
-            return Perdeu;
         }
     }
+    if (pinos == 1)
+        return Venceu;
+    return Perdeu;
+
+
+}
+
+bool salvaTabuleiro(Tabuleiro *t, char *nomeArquivo) {
+    FILE *f = fopen(nomeArquivo, "w");
+    if (f == NULL)
+        return false;
+    fprintf(f, "%d %d", t->n, t->n);
+    for (int i = 0; i < t->n; ++i) {
+        for (int j = 0; j < t->m; ++j) {
+            fprintf(f, "%d ", t->Tab[i][j]);
+        }
+        fprintf(f, "\n");
+    }
+    fclose(f);
+    return true;
 }
 
 int main(int argc, char *argv[]) {
     printf("Jogo Resta Um! \n");
     Tabuleiro t;
-    FILE *file;
 
     if (argc > 1) {
-//        file = fopen(argv[1], 'r');
-//        t = importaTabuleiro(file);
+        t = importaTabuleiro(argv[1]);
     } else {
-//        file = fopen("out->txt", 'w');
-//        int m = rand() % 20, n = rand() % 20;
-//        t = geraTabuleiro(6, 8);
+        int m = rand() % 20, n = rand() % 20;
+        t = geraTabuleiro(m, n);
+        inicializaTabuleiro(&t);
     }
-    t = geraTabuleiro(6, 7);
-    inicializaTabuleiro(&t);
-    printf("Um jogo foi %s\n\n", argc < 1 ? "criado" : "importado");
+    printf("Um jogo foi %s\n\n", argc > 1 ? "criado" : "importado");
 
     do {
         Jogada j;
@@ -115,16 +147,15 @@ int main(int argc, char *argv[]) {
         if (!strcmp(token, "c") || !strcmp(token, "b") ||
             !strcmp(token, "e") || !strcmp(token, "d")) {
             j.direcao = (Direcao) token[0];
-            token = strtok(NULL, " ");
-            j.x = atoi(token);
-            token = strtok(NULL, " ");
-            j.y = atoi(token);
+            j.x = token[2] - 65; // 65 == 'A'
+            j.y = token[3] - 65;
             fazJogada(&t, &j);
         } else if (!strcasecmp(token, "ajuda")) {
             token = strtok(NULL, " ");
 //            criaJogada(t);
         } else if (!strcasecmp(token, "salvar")) {
-//            salvaTabuleiro(t, file);
+            token = strtok(NULL, " ");
+            salvaTabuleiro(&t, token);
         } else if (!strcasecmp(token, "sair")) {
             return 0;
         } else {
@@ -135,6 +166,5 @@ int main(int argc, char *argv[]) {
     } while (verificaSeVenceuOuPerdeu(&t) == Inconclusivo);
 
 //    printf("Voce %s o jogo->", verificaSeVenceu(&t) ? "venceu" : "perdeu");
-    fclose(file);
     return 0;
 }

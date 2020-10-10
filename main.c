@@ -4,6 +4,7 @@
 #include "restaum.h"
 
 #define CMD_SIZE 30
+#define MAX_JOGADAS 5
 
 Tabuleiro geraTabuleiro(int m, int n) {
     Tabuleiro t;
@@ -44,11 +45,11 @@ Tabuleiro importaTabuleiro(char *nomeArquivo) {
 
 
 void exibeTabuleiro(Tabuleiro *t) {
-    for (int i = 0; i < t->m; ++i) {
-        for (int j = 0; j < t->n; ++j) {
-            if (j == 0)
-                printf("%c\t", i == 0 ? ' ' : i - 1 + 65);
-            if (i == 0)
+    for (int i = -1; i < t->m; ++i) {
+        for (int j = -1; j < t->n; ++j) {
+            if (j == -1)
+                printf("%c\t", i == -1 ? ' ' : i + 1 + 65);
+            else if (i == -1)
                 printf("%c\t", j != t->n ? j + 65 : '\n');
             else
                 printf("%d\t", t->Tab[i][j]);
@@ -62,32 +63,45 @@ bool fazJogada(Tabuleiro *t, Jogada *j) {
     bool movido = false;
     switch (j->direcao) {
         case Direita:
-            if (t->Tab[j->x][j->y + 1] == Ocupado && t->Tab[j->x][j->y + 2] == Disponivel) {
-                t->Tab[j->x][j->y + 1] = Disponivel;
-                t->Tab[j->x][j->y + 2] = Ocupado;
-                movido = true;
-            }
+            if (j->y + 2 < t->n - 1)
+                if (t->Tab[j->x][j->y] == Ocupado && t->Tab[j->x][j->y + 1] == Ocupado &&
+                    t->Tab[j->x][j->y + 2] == Disponivel) {
+                    t->Tab[j->x][j->y + 1] = Disponivel;
+                    t->Tab[j->x][j->y + 2] = Ocupado;
+                    t->Tab[j->x][j->y] = Disponivel;
+                    movido = true;
+                }
             break;
         case Esquerda:
-            if (t->Tab[j->x][j->y - 1] == Ocupado && t->Tab[j->x][j->y - 2] == Disponivel) {
-                t->Tab[j->x][j->y - 1] = Disponivel;
-                t->Tab[j->x][j->y - 2] = Ocupado;
-                movido = true;
-            }
+            if (j->y - 2 >= 0)
+                if (t->Tab[j->x][j->y] == Ocupado && t->Tab[j->x][j->y - 1] == Ocupado &&
+                    t->Tab[j->x][j->y - 2] == Disponivel) {
+                    t->Tab[j->x][j->y - 1] = Disponivel;
+                    t->Tab[j->x][j->y - 2] = Ocupado;
+                    t->Tab[j->x][j->y] = Disponivel;
+                    movido = true;
+                }
             break;
         case Baixo:
-            if (t->Tab[j->x + 1][j->y] == Ocupado && t->Tab[j->x + 2][j->y] == Disponivel) {
-                t->Tab[j->x + 1][j->y] = Disponivel;
-                t->Tab[j->x + 2][j->y] = Ocupado;
-                movido = true;
-            }
+            if (j->x + 2 < t->m - 1)
+                if (t->Tab[j->x][j->y] == Ocupado && t->Tab[j->x + 1][j->y] == Ocupado &&
+                    t->Tab[j->x + 2][j->y] == Disponivel) {
+                    t->Tab[j->x + 1][j->y] = Disponivel;
+                    t->Tab[j->x + 2][j->y] = Ocupado;
+                    t->Tab[j->x][j->y] = Disponivel;
+
+                    movido = true;
+                }
             break;
         case Cima:
-            if (t->Tab[j->x - 1][j->y] == Ocupado && t->Tab[j->x - 2][j->y] == Disponivel) {
-                t->Tab[j->x - 1][j->y] = Disponivel;
-                t->Tab[j->x - 2][j->y] = Ocupado;
-                movido = true;
-            }
+            if (j->x - 2 >= 0)
+                if (t->Tab[j->x][j->y] == Ocupado && t->Tab[j->x - 1][j->y] == Ocupado &&
+                    t->Tab[j->x - 2][j->y] == Disponivel) {
+                    t->Tab[j->x - 1][j->y] = Disponivel;
+                    t->Tab[j->x - 2][j->y] = Ocupado;
+                    t->Tab[j->x][j->y] = Disponivel;
+                    movido = true;
+                }
             break;
     }
     return movido;
@@ -98,11 +112,12 @@ Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t) {
     for (int i = 0; i < t->m; i++) {
         for (int j = 0; j < t->n; j++) {
             if (t->Tab[i][j] == Ocupado) { // Verifica é possivel mover o pino para alguma direção
-                if (t->Tab[i][j + 1] == Ocupado && t->Tab[i][j + 2] == Disponivel ||
-                    t->Tab[i][j - 1] == Ocupado && t->Tab[i][j - 2] == Disponivel ||
-                    t->Tab[i + 1][j] == Ocupado && t->Tab[i + 2][j] == Disponivel ||
-                    t->Tab[i - 1][j] == Ocupado && t->Tab[i - 2][j] == Disponivel)
-                    return Inconclusivo;
+                if (i - 2 >= 0 && j - 2 >= 0 && i+3 <= t->m && j + 3 <= t->n)
+                    if (t->Tab[i][j + 1] == Ocupado && t->Tab[i][j + 2] == Disponivel ||
+                        t->Tab[i][j - 1] == Ocupado && t->Tab[i][j - 2] == Disponivel ||
+                        t->Tab[i + 1][j] == Ocupado && t->Tab[i + 2][j] == Disponivel ||
+                        t->Tab[i - 1][j] == Ocupado && t->Tab[i - 2][j] == Disponivel)
+                        return Inconclusivo;
                 ++pinos;
             }
         }
@@ -126,6 +141,33 @@ bool salvaTabuleiro(Tabuleiro *t, char *nomeArquivo) {
         fprintf(f, "\n");
     }
     fclose(f);
+    return true;
+}
+
+bool criaEFazJogada(Tabuleiro *t) {
+    for (int i = 0; i < t->m; ++i) {
+        for (int k = 0; k < t->n; ++k) {
+            for (Direcao w = Baixo; w <= Esquerda; ++w) {
+                Jogada j;
+                j.x = i;
+                j.y = k;
+                j.direcao = w;
+                if (fazJogada(t, &j))
+                    return true;
+            }
+
+        }
+    }
+    return false;
+}
+
+bool verificaSeExistemJogadas(Tabuleiro *t) {
+    Tabuleiro t2 = *t;
+    for (int i = 0; i < MAX_JOGADAS; ++i) {
+        if (!criaEFazJogada(&t2)) // TESTA ATÉ MAX_JOGADAS OU NÃO CONSEGUIR FAZER MOVIMENTOS
+            return false; // SE NAO TIVER MAIS JOGADAS RETORNA A FALSE
+
+    }
     return true;
 }
 
@@ -157,7 +199,10 @@ int main(int argc, char *argv[]) {
             fazJogada(&t, &j);
         } else if (!strcasecmp(token, "ajuda")) {
             token = strtok(NULL, " ");
-//            criaJogada(t);
+            for (int i = 0; i < (int) token[0]; ++i) {
+                criaEFazJogada(&t);
+                exibeTabuleiro(&t);
+            }
         } else if (!strcasecmp(token, "salvar")) {
             token = strtok(NULL, " ");
             salvaTabuleiro(&t, token);
@@ -168,8 +213,11 @@ int main(int argc, char *argv[]) {
         }
 
 
-    } while (verificaSeVenceuOuPerdeu(&t) == Inconclusivo);
-
-//    printf("Voce %s o jogo->", verificaSeVenceu(&t) ? "venceu" : "perdeu");
+    } while (verificaSeExistemJogadas(&t));
+    Resultado verifica = verificaSeVenceuOuPerdeu(&t);
+    if (verifica == Venceu)
+        printf("Voce venceu o jogo.");
+    else if (verifica == Perdeu)
+        printf("Voce perdeu o jogo.");
     return 0;
 }

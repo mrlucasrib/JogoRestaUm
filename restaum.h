@@ -30,7 +30,9 @@ typedef struct {
 } Tabuleiro;
 
 
-Jogada *criaJogada(Tabuleiro *t);
+bool criaEFazJogada(Tabuleiro *t);
+
+bool verificaSeExistemJogadas(Tabuleiro *t);
 
 bool fazJogada(Tabuleiro *t, Jogada *j);
 

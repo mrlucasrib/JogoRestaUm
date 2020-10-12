@@ -3,4 +3,4 @@ project(RestaUm C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(RestaUm main.c restaum.h)
+add_executable(RestaUm main.c restaum.h cores.h)

@@ -34,7 +34,7 @@ bool criaEFazJogada(Tabuleiro *t);
 
 bool verificaSeExistemJogadas(Tabuleiro *t);
 
-bool fazJogada(Tabuleiro *t, Jogada *j);
+bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida);
 
 Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t);
 

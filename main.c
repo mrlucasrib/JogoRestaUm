@@ -21,7 +21,7 @@ Tabuleiro geraTabuleiro(int m, int n) {
 void inicializaTabuleiro(Tabuleiro *t) {
     for (int i = 0; i < t->m; i++) {
         for (int j = 0; j < t->n; j++) {
-            t->Tab[i][j] = (rand() % 3) -1;
+            t->Tab[i][j] = (rand() % 3) - 1;
         }
     }
 }
@@ -68,7 +68,7 @@ void exibeTabuleiro(Tabuleiro *t) {
 // O consolida quebra o principio de responsabilidade unica do SOLID, entretanto optei em fazer assim
 // para não ter copia de codigo
 bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida) {
-    bool movido = false;
+    bool aprovado = false;
     switch (j->direcao) {
         case Direita:
             if (j->y + 2 < t->n - 1)
@@ -78,8 +78,9 @@ bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida) {
                         t->Tab[j->x][j->y + 1] = Disponivel;
                         t->Tab[j->x][j->y + 2] = Ocupado;
                         t->Tab[j->x][j->y] = Disponivel;
-                        movido = true;
                     }
+                    aprovado = true;
+
                 }
             break;
         case Esquerda:
@@ -90,8 +91,9 @@ bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida) {
                         t->Tab[j->x][j->y - 1] = Disponivel;
                         t->Tab[j->x][j->y - 2] = Ocupado;
                         t->Tab[j->x][j->y] = Disponivel;
-                        movido = true;
                     }
+                    aprovado = true;
+
                 }
             break;
         case Baixo:
@@ -102,8 +104,9 @@ bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida) {
                         t->Tab[j->x + 1][j->y] = Disponivel;
                         t->Tab[j->x + 2][j->y] = Ocupado;
                         t->Tab[j->x][j->y] = Disponivel;
-                        movido = true;
                     }
+                    aprovado = true;
+
                 }
             break;
         case Cima:
@@ -114,12 +117,13 @@ bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida) {
                         t->Tab[j->x - 1][j->y] = Disponivel;
                         t->Tab[j->x - 2][j->y] = Ocupado;
                         t->Tab[j->x][j->y] = Disponivel;
-                        movido = true;
                     }
+                    aprovado = true;
+
                 }
             break;
     }
-    return movido;
+    return aprovado;
 }
 
 Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t) {
@@ -128,10 +132,10 @@ Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t) {
         for (int j = 0; j < t->n; j++) {
             if (t->Tab[i][j] == Ocupado) { // Verifica é possivel mover o pino para alguma direção
                 if (i - 2 >= 0 && j - 2 >= 0 && i + 3 <= t->m && j + 3 <= t->n)
-                    if ((t->Tab[i][j + 1] == Ocupado && t->Tab[i][j + 2] == Disponivel) ||
-                        (t->Tab[i][j - 1] == Ocupado && t->Tab[i][j - 2] == Disponivel) ||
-                        (t->Tab[i + 1][j] == Ocupado && t->Tab[i + 2][j] == Disponivel) ||
-                        (t->Tab[i - 1][j] == Ocupado && t->Tab[i - 2][j] == Disponivel))
+                    if (t->Tab[i][j + 1] == Ocupado && t->Tab[i][j + 2] == Disponivel ||
+                        t->Tab[i][j - 1] == Ocupado && t->Tab[i][j - 2] == Disponivel ||
+                        t->Tab[i + 1][j] == Ocupado && t->Tab[i + 2][j] == Disponivel ||
+                        t->Tab[i - 1][j] == Ocupado && t->Tab[i - 2][j] == Disponivel)
                         return Inconclusivo;
                 ++pinos;
             }
@@ -176,7 +180,7 @@ bool criaEFazJogada(Tabuleiro *t) {     /// TODO
     return false;
 }
 
-Jogada *criaJogadas(Tabuleiro *t) { // todo nova
+Jogada *criaJogadas(Tabuleiro *t, int *tamanho) { // todo nova
     Jogada *jgds = malloc(sizeof(Jogada) * (t->n * t->m));
     int p = 0;
     for (int i = 0; i < t->m; ++i) {
@@ -194,6 +198,7 @@ Jogada *criaJogadas(Tabuleiro *t) { // todo nova
 
         }
     }
+    *tamanho = p;
     if (p > 0) {
         jgds = realloc(jgds, p * sizeof(Jogada));
         return jgds;
@@ -201,40 +206,35 @@ Jogada *criaJogadas(Tabuleiro *t) { // todo nova
         return NULL;
 }
 
-bool verificaSeExistemJogadas(Tabuleiro *t) {
-    Tabuleiro t2 = *t;
-    for (int i = 0; i < MAX_JOGADAS; ++i) {
-        if (!criaEFazJogada(&t2)) // TESTA ATÉ MAX_JOGADAS OU NÃO CONSEGUIR FAZER MOVIMENTOS
-            return false; // SE NAO TIVER MAIS JOGADAS RETORNA A FALSE
+bool backtrack(Tabuleiro *t, int count) { // todo terminae
+    if (count == 5)
+        return false;
+    if (verificaSeVenceuOuPerdeu(t) != Inconclusivo)
+        return true;
+    int tam;
+    Jogada *j = criaJogadas(t, &tam); // cria proximos nós (Jogadas possiveis para o tabuleiro)
+    for (int k = 0; k < tam; ++k) { // loop a corrggir - entra no nó e executa as jogadas (altera o tabuleiro)
+        Tabuleiro tCopia1 = *t;
+        if (fazJogada(&tCopia1, &j[k], true))
+            backtrack(&tCopia1, count + 1); // recursiva - count sera usado para uma condição de parada.
+        else
+            return false;
+
 
     }
-    return true;
 }
 
-//bool backtrack(Tabuleiro *t, int count) { // todo terminae
-//
-//    Jogada *j = criaJogadas(t); // cria proximos nós (Jogadas possiveis para o tabuleiro)
-//
-//    for (int k = 0; k < sizeof(*j); ++k) { // loop a corrggir - entra no nó e executa as jogadas (altera o tabuleiro)
-//        Tabuleiro tCopia1 = *t;
-//        if (fazJogada(&tCopia1, &j[k], true))
-//            backtrack(&tCopia1, count + 1); // recursiva - count sera usado para uma condição de parada.
-//        else
-//            return false;
-//
+bool verificaSeExistemJogadas(Tabuleiro *t) {
+//    Tabuleiro t2 = *t;
+//    for (int i = 0; i < MAX_JOGADAS; ++i) {
+//        if (!criaEFazJogada(&t2)) // TESTA ATÉ MAX_JOGADAS OU NÃO CONSEGUIR FAZER MOVIMENTOS
+//            return false; // SE NAO TIVER MAIS JOGADAS RETORNA A FALSE
 //
 //    }
-////        int tamanho = sizeof(*j)/sizeof(Jogada);
-//    for (int k = 0; k < MAX_JOGADAS; ++k) {
-////enqt jogadas validas
-//        while (fazJogada(&tCopia, &j[k], true) && k < MAX_JOGADAS);
-//    }
-//
-//
-//}
-//
-//return true;
-//}
+    return backtrack(t, 0);
+//    return true;
+}
+
 
 int main(int argc, char *argv[]) {
     printf("Jogo Resta Um! \n");
@@ -243,9 +243,13 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         t = importaTabuleiro(argv[1]);
     } else {
-        int m = rand() % 30, n = rand() % 30;
+        int m = 20, n = 20;
         t = geraTabuleiro(m, n);
         inicializaTabuleiro(&t);
+        while (verificaSeVenceuOuPerdeu(&t) != Inconclusivo){
+            inicializaTabuleiro(&t);
+        }
+
     }
     printf("Um jogo foi %s\n\n", argc > 1 ? "criado" : "importado");
 

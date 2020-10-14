@@ -206,19 +206,20 @@ Jogada *criaJogadas(Tabuleiro *t, int *tamanho) { // todo nova
         return NULL;
 }
 
-bool backtrack(Tabuleiro *t, int count) { // todo terminae
-    if (count == 5)
-        return false;
-    if (verificaSeVenceuOuPerdeu(t) != Inconclusivo)
-        return true;
+Resultado backtrack(Tabuleiro *t, int count) {
+    if (count == MAX_JOGADAS)
+        return Inconclusivo;
+    Resultado res = verificaSeVenceuOuPerdeu(t);
+    if (res != Inconclusivo && res != Venceu)
+        return IraPerder;
     int tam;
     Jogada *j = criaJogadas(t, &tam); // cria proximos nós (Jogadas possiveis para o tabuleiro)
-    for (int k = 0; k < tam; ++k) { // loop a corrggir - entra no nó e executa as jogadas (altera o tabuleiro)
+    for (int k = 0; k < tam; ++k) { //  entra no nó e executa as jogadas (altera o tabuleiro)
         Tabuleiro tCopia1 = *t;
         if (fazJogada(&tCopia1, &j[k], true))
-            backtrack(&tCopia1, count + 1); // recursiva - count sera usado para uma condição de parada.
+            return backtrack(&tCopia1, count + 1); // recursiva - count sera usado para uma condição de parada.
         else
-            return false;
+            return verificaSeVenceuOuPerdeu(&tCopia1);
 
 
     }
@@ -243,10 +244,10 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         t = importaTabuleiro(argv[1]);
     } else {
-        int m = 20, n = 20;
+        int m = (rand() % 10) + 4, n = (rand() % 10) + 4;
         t = geraTabuleiro(m, n);
         inicializaTabuleiro(&t);
-        while (verificaSeVenceuOuPerdeu(&t) != Inconclusivo){
+        while (verificaSeVenceuOuPerdeu(&t) != Inconclusivo) {
             inicializaTabuleiro(&t);
         }
 
@@ -263,15 +264,20 @@ int main(int argc, char *argv[]) {
         if (!strcmp(token, "c") || !strcmp(token, "b") ||
             !strcmp(token, "e") || !strcmp(token, "d")) {
             j.direcao = (Direcao) token[0];
-            j.x = token[2] - 65; // 65 == 'A'
-            j.y = token[3] - 65;
-            fazJogada(&t, &j, true);
+            j.x = token[2] - 'a';
+            j.y = token[3] - 'a';
+            if(fazJogada(&t, &j, true))
+                printf("Jogada feita\n");
+            else
+                printf("Não foi possivel efetuar a jogada\n");
+            exibeTabuleiro(&t);
         } else if (!strcasecmp(token, "ajuda")) {
             token = strtok(NULL, " ");
-            for (int i = 0; i < (int) token[0]; ++i) {
+            for (int i = 0; i < token[0] - '0'; ++i) {
                 criaEFazJogada(&t);
-                exibeTabuleiro(&t);
             }
+            if (verificaSeVenceuOuPerdeu(&t) != Inconclusivo)
+                printf("A ajuda que você pediu fez você perder, mais sorte na proxima ^_^\n");
         } else if (!strcasecmp(token, "salvar")) {
             token = strtok(NULL, " ");
             salvaTabuleiro(&t, token);
@@ -282,11 +288,13 @@ int main(int argc, char *argv[]) {
         }
 
 
-    } while (verificaSeExistemJogadas(&t));
+    } while (backtrack(&t, 0) == Inconclusivo);
     Resultado verifica = verificaSeVenceuOuPerdeu(&t);
     if (verifica == Venceu)
         printf("Voce venceu o jogo.");
     else if (verifica == Perdeu)
         printf("Voce perdeu o jogo.");
+    else
+        printf("Você iria perder o jogo, e para não jogar atoa o jogo foi encerrado.");
     return 0;
 }

@@ -49,15 +49,15 @@ void exibeTabuleiro(Tabuleiro *t) {
     for (int i = -1; i < t->m; ++i) {
         for (int j = -1; j < t->n; ++j) {
             if (j == -1)
-                printf(BG_BLUE(BOLD("%c\t")), i == -1 ? ' ' : i + 1 + 65);
+                printf(BG_BLUE(BOLD(" %c ")), i == -1 ? ' ' : i + 65);
             else if (i == -1)
-                printf(BG_BLUE(BOLD("%c\t")), j != t->n ? j + 65 : '\n');
+                printf(BG_BLUE(BOLD(" %c ")), j != t->n ? j +  65 : '\n');
             else if (t->Tab[i][j] == Disponivel)
-                printf(BG_GREEN("%d\t"), t->Tab[i][j]);
+                printf(BG_GREEN(" O "));
             else if (t->Tab[i][j] == Ocupado)
-                printf(BG_RED("%d\t"), t->Tab[i][j]);
+                printf(BG_RED(" X "));
             else
-                printf(BG_BLUE(" \t"));
+                printf(BG_BLUE("   "));
 
 
         }

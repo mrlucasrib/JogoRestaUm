@@ -12,7 +12,7 @@ typedef enum {
 } Direcao;
 
 typedef enum {
-    Disponivel = 0, Ocupado = 1, Inutilizavel = -1
+    Disponivel = 0, Ocupado = 1
 } Posisao;
 
 typedef enum {
@@ -30,9 +30,8 @@ typedef struct {
 } Tabuleiro;
 
 
-Jogada *criaJogada(Tabuleiro *t);
 
-bool fazJogada(Tabuleiro *t, Jogada *j);
+bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida);
 
 Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t);
 

@@ -1,12 +1,16 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-msc50-cpp"
+#pragma ide diagnostic ignored "cert-msc51-cpp"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "restaum.h"
 #include "cores.h"
+#include <time.h>
 
 #define CMD_SIZE 30
 #define MAX_JOGADAS 5
-
+#define DO_BACKTRACK 1
 Tabuleiro geraTabuleiro(int m, int n) {
     Tabuleiro t;
     t.Tab = malloc(m * sizeof *t.Tab);
@@ -65,8 +69,7 @@ void exibeTabuleiro(Tabuleiro *t) {
     }
 }
 
-// O consolida quebra o principio de responsabilidade unica do SOLID, entretanto optei em fazer assim
-// para não ter copia de codigo
+
 bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida) {
 
     bool aprovado = false;
@@ -133,10 +136,10 @@ Resultado verificaSeVenceuOuPerdeu(Tabuleiro *t) {
         for (int j = 0; j < t->n; j++) {
             if (t->Tab[i][j] == Ocupado) { // Verifica é possivel mover o pino para alguma direção
                 if (i - 2 >= 0 && j - 2 >= 0 && i + 3 <= t->m && j + 3 <= t->n)
-                    if (t->Tab[i][j + 1] == Ocupado && t->Tab[i][j + 2] == Disponivel ||
-                        t->Tab[i][j - 1] == Ocupado && t->Tab[i][j - 2] == Disponivel ||
-                        t->Tab[i + 1][j] == Ocupado && t->Tab[i + 2][j] == Disponivel ||
-                        t->Tab[i - 1][j] == Ocupado && t->Tab[i - 2][j] == Disponivel)
+                    if ((t->Tab[i][j + 1] == Ocupado && t->Tab[i][j + 2] == Disponivel) ||
+                        (t->Tab[i][j - 1] == Ocupado && t->Tab[i][j - 2] == Disponivel) ||
+                        (t->Tab[i + 1][j] == Ocupado && t->Tab[i + 2][j] == Disponivel) ||
+                        (t->Tab[i - 1][j] == Ocupado && t->Tab[i - 2][j] == Disponivel))
                         return Inconclusivo;
                 ++pinos;
             }
@@ -153,9 +156,9 @@ bool salvaTabuleiro(Tabuleiro *t, char *nomeArquivo) {
     FILE *f = fopen(nomeArquivo, "w");
     if (f == NULL)
         return false;
-    fprintf(f, "%d %d", t->n, t->n);
-    for (int i = 0; i < t->n; ++i) {
-        for (int j = 0; j < t->m; ++j) {
+    fprintf(f, "%d %d\n", t->m, t->n);
+    for (int i = 0; i < t->m; ++i) {
+        for (int j = 0; j < t->n; ++j) {
             fprintf(f, "%d ", t->Tab[i][j]);
         }
         fprintf(f, "\n");
@@ -164,26 +167,8 @@ bool salvaTabuleiro(Tabuleiro *t, char *nomeArquivo) {
     return true;
 }
 
-bool criaEFazJogada(Tabuleiro *t) {     /// TODO
-    for (int i = 0; i < t->m; ++i) {
-        for (int k = 0; k < t->n; ++k) {
-            for (Direcao w = Baixo; w <= Esquerda; ++w) {
-                Jogada j;
-                j.x = i;
-                j.y = k;
-                j.direcao = w;
-                if (fazJogada(t, &j, false)) {
-                    fazJogada(t, &j, true);
-                    exibeTabuleiro(t);
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
 
-Jogada *criaJogadas(Tabuleiro *t, int *tamanho) { // todo nova
+Jogada *criaJogadas(Tabuleiro *t, int *tamanho) {
     Jogada *jgds = malloc(sizeof(Jogada) * (t->n * t->m));
     int p = 0;
     for (int i = 0; i < t->m; ++i) {
@@ -218,16 +203,34 @@ Resultado backtrack(Tabuleiro *t, int count) {
     int tam;
     Jogada *j = criaJogadas(t, &tam); // cria proximos nós (Jogadas possiveis para o tabuleiro)
     for (int k = 0; k < tam; ++k) { //  entra no nó e executa as jogadas (altera o tabuleiro)
-        Tabuleiro tCopia1 = *t; // todo ele nao esta fazendo a copia - era para criar uma copia a cada iteracao de k
-        if (fazJogada(&tCopia1, &j[k], true)) {
-            b = backtrack(&tCopia1, count + 1);
-            // O if é necessario para garantir que o loop for aconteça (com return direto ele não faria o loop to.do)
-            if (b == Venceu)
-                return Venceu;
-            else if (b == Inconclusivo)
-                return Inconclusivo;
-
+//        Gera copia
+        Tabuleiro tcopia = geraTabuleiro(t->m, t->n);
+        for (int i = 0; i < t->m; ++i) {
+            memcpy(tcopia.Tab[i], t->Tab[i], sizeof(int) * t->n);
         }
+
+        if (fazJogada(&tcopia, &j[k], true)) {
+            b = backtrack(&tcopia, count + 1);
+            // LIBERERAR MEMORIA tcopia.Tab
+            for (int i = 0; i < tcopia.m; ++i)
+                free(tcopia.Tab[i]);
+            free(tcopia.Tab);
+
+            if (b == Venceu) {
+
+                return Venceu;
+            } else if (b == Inconclusivo) {
+                return Inconclusivo;
+            }
+
+        } else {
+            // LIBERERAR MEMORIA tcopia.Tab
+            for (int i = 0; i < tcopia.m; ++i)
+                free(tcopia.Tab[i]);
+            free(tcopia.Tab);
+        }
+
+
     }
 
     return Perdeu;
@@ -240,7 +243,8 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         t = importaTabuleiro(argv[1]);
     } else {
-        int m = (rand() % 10) + 4, n = (rand() % 10) + 4;
+        srand(time(0));
+        int m = (rand() % 15) + 4, n = (rand() % 15) + 4;
         t = geraTabuleiro(m, n);
         inicializaTabuleiro(&t);
         while (verificaSeVenceuOuPerdeu(&t) != Inconclusivo) {
@@ -248,7 +252,7 @@ int main(int argc, char *argv[]) {
         }
 
     }
-    printf("Um jogo foi %s\n\n", argc > 1 ? "criado" : "importado");
+    printf("Um jogo foi %s\n\n", argc > 1 ? "importado" : "criado");
 
     do {
         Jogada j;
@@ -266,7 +270,7 @@ int main(int argc, char *argv[]) {
                 printf("Jogada feita\n");
             else
                 printf("Não foi possivel efetuar a jogada\n");
-            exibeTabuleiro(&t);
+
         } else if (!strcasecmp(token, "ajuda")) {
             token = strtok(NULL, " ");
             for (int i = 0; i < token[0] - '0'; ++i) {
@@ -274,20 +278,26 @@ int main(int argc, char *argv[]) {
                 Jogada *jg = criaJogadas(&t, &tmn);
                 fazJogada(&t, &jg[0], true);
             }
-            if (verificaSeVenceuOuPerdeu(&t) == Perdeu)
+            if (verificaSeVenceuOuPerdeu(&t) == Perdeu) {
                 printf("A ajuda que você pediu fez você perder, mais sorte na proxima ^_^\n");
+                return 0;
+            }
+
         } else if (!strcasecmp(token, "salvar")) {
             token = strtok(NULL, " ");
+            token[strlen(token) - 1] = '\0';
             salvaTabuleiro(&t, token);
         } else if (!strcasecmp(token, "sair")) {
             return 0;
         } else {
             printf("Comando invalido\n");
         }
-//        if (backtrack(&t, 0) == Perdeu) {
-//            printf("Você iria perder o jogo, por isso o jogo foi parado\n");
-//            return 0;
-//        }
+#ifdef DO_BACKTRACK
+        if (backtrack(&t, 0) == Perdeu) {
+            printf("Você iria perder o jogo, por isso o jogo foi parado\n");
+            return 0;
+        }
+#endif
     } while (verificaSeVenceuOuPerdeu(&t));
     Resultado verifica = verificaSeVenceuOuPerdeu(&t);
     if (verifica == Venceu)
@@ -295,4 +305,5 @@ int main(int argc, char *argv[]) {
     else if (verifica == Perdeu)
         printf("Voce perdeu o jogo.");
 }
+
 

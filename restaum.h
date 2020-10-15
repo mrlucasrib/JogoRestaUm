@@ -12,11 +12,11 @@ typedef enum {
 } Direcao;
 
 typedef enum {
-    Disponivel = 0, Ocupado = 1, Inutilizavel = -1
+    Disponivel = 0, Ocupado = 1
 } Posisao;
 
 typedef enum {
-    Venceu, Perdeu, Inconclusivo, IraPerder, IraVencer
+    Venceu, Perdeu, Inconclusivo
 } Resultado;
 
 typedef struct {
@@ -30,9 +30,6 @@ typedef struct {
 } Tabuleiro;
 
 
-bool criaEFazJogada(Tabuleiro *t);
-
-bool verificaSeExistemJogadas(Tabuleiro *t);
 
 bool fazJogada(Tabuleiro *t, Jogada *j, bool consolida);
 

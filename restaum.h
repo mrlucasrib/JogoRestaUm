@@ -16,7 +16,7 @@ typedef enum {
 } Posisao;
 
 typedef enum {
-    Venceu, Perdeu, Inconclusivo, IraPerder
+    Venceu, Perdeu, Inconclusivo, IraPerder, IraVencer
 } Resultado;
 
 typedef struct {
